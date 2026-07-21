@@ -1,0 +1,680 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>KoP Pre-Event Training Optimizer</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  /* =====================================================================
+     DESIGN TOKENS — "war room / campaign dossier" palette & type
+     ===================================================================== */
+  :root{
+    --bg:#12161d;
+    --panel:#1a212b;
+    --panel-alt:#1f2732;
+    --line:#313d4c;
+    --line-soft:#242e3a;
+    --brass:#c9a227;
+    --brass-bright:#e2c15a;
+    --rust:#b25a35;
+    --text:#e9e4d6;
+    --text-dim:#8d99ab;
+    --good:#7ba566;
+    --bad:#b2554f;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:
+      radial-gradient(1200px 600px at 15% -10%, #1c2431 0%, transparent 60%),
+      radial-gradient(900px 500px at 110% 10%, #1a2028 0%, transparent 55%),
+      var(--bg);
+    color:var(--text);
+    font-family:'Source Serif 4', Georgia, serif;
+    padding:36px 20px 80px;
+  }
+  .wrap{max-width:1080px;margin:0 auto;}
+
+  /* ---- Header ---- */
+  .eyebrow{
+    font-family:'Oswald',sans-serif;
+    font-size:12px;
+    letter-spacing:.28em;
+    text-transform:uppercase;
+    color:var(--brass);
+    margin-bottom:10px;
+    display:flex;align-items:center;gap:10px;
+  }
+  .eyebrow::before{content:"";width:22px;height:1px;background:var(--brass);display:inline-block;}
+  h1{
+    font-family:'Oswald',sans-serif;
+    font-weight:700;
+    font-size:clamp(28px,4vw,42px);
+    letter-spacing:.01em;
+    margin:0 0 8px;
+    color:#f4efe2;
+  }
+  .sub{color:var(--text-dim);max-width:680px;line-height:1.55;font-size:15px;margin-bottom:34px;}
+  .sub b{color:var(--text);font-weight:600;}
+
+  .method-title{
+    font-family:'Oswald',sans-serif;
+    font-size:13px;letter-spacing:.16em;text-transform:uppercase;
+    color:var(--brass);
+    margin:38px 0 4px;
+    display:flex;align-items:center;gap:10px;
+  }
+  .method-title::before{content:"";width:14px;height:14px;border:1px solid var(--brass);border-radius:50%;display:inline-block;flex:none;}
+  .method-desc{color:var(--text-dim);font-size:13.5px;line-height:1.55;margin:0 0 16px;max-width:760px;}
+
+  /* ---- Layout ---- */
+  .grid{display:grid;grid-template-columns:340px 1fr;gap:20px;align-items:start;}
+  @media (max-width:820px){.grid{grid-template-columns:1fr;}}
+  .stack{display:flex;flex-direction:column;gap:24px;}
+
+  .panel{
+    background:var(--panel);
+    border:1px solid var(--line);
+    border-radius:3px;
+    position:relative;
+  }
+  .panel::before{
+    content:"";position:absolute;top:0;left:0;right:0;height:2px;
+    background:linear-gradient(90deg,var(--brass),transparent 70%);
+  }
+  .panel-head{
+    padding:16px 20px 12px;
+    border-bottom:1px solid var(--line-soft);
+    font-family:'Oswald',sans-serif;
+    font-size:13px;
+    letter-spacing:.14em;
+    text-transform:uppercase;
+    color:var(--brass-bright);
+  }
+  .panel-body{padding:18px 20px 22px;}
+
+  /* ---- Form ---- */
+  label{
+    display:block;
+    font-family:'Oswald',sans-serif;
+    font-size:11.5px;
+    letter-spacing:.06em;
+    text-transform:uppercase;
+    color:var(--text-dim);
+    margin-bottom:6px;
+  }
+  .field{margin-bottom:18px;}
+  .field-hint{font-size:12px;color:var(--text-dim);margin-top:6px;line-height:1.5;font-family:'Source Serif 4',serif;}
+  input[type=number]{
+    width:100%;
+    background:var(--panel-alt);
+    border:1px solid var(--line);
+    color:var(--text);
+    font-family:'Space Mono',monospace;
+    font-size:16px;
+    padding:9px 12px;
+    border-radius:2px;
+    outline:none;
+  }
+  input[type=number]:focus{border-color:var(--brass);}
+  .pct-wrap{position:relative;}
+  .pct-wrap span{
+    position:absolute;right:12px;top:50%;transform:translateY(-50%);
+    font-family:'Space Mono',monospace;color:var(--text-dim);font-size:14px;pointer-events:none;
+  }
+
+  .checkline{
+    display:flex;align-items:flex-start;gap:10px;
+    background:var(--panel-alt);
+    border:1px solid var(--line);
+    padding:12px 14px;
+    border-radius:2px;
+    margin-bottom:14px;
+  }
+  .checkline input{margin-top:3px;accent-color:var(--brass);width:16px;height:16px;flex:none;}
+  .checkline .ct-label{font-family:'Oswald',sans-serif;font-size:13px;letter-spacing:.02em;color:var(--text);}
+  .checkline .ct-sub{font-size:12px;color:var(--text-dim);margin-top:2px;}
+
+  .readout{
+    border-top:1px dashed var(--line);
+    margin-top:4px;
+    padding-top:16px;
+  }
+  .ro-row{display:flex;justify-content:space-between;align-items:baseline;padding:5px 0;font-size:13.5px;}
+  .ro-row .k{color:var(--text-dim);font-family:'Oswald',sans-serif;font-size:11.5px;letter-spacing:.05em;text-transform:uppercase;}
+  .ro-row .v{font-family:'Space Mono',monospace;color:var(--brass-bright);}
+
+  /* ---- Results ---- */
+  .rec-card{
+    background:linear-gradient(160deg, var(--panel-alt) 0%, var(--panel) 70%);
+    border:1px solid var(--brass);
+    border-radius:3px;
+    padding:22px 24px;
+    margin-bottom:20px;
+    position:relative;
+    overflow:hidden;
+  }
+  .rec-card::after{
+    content:"RECOMMENDED";
+    position:absolute;top:14px;right:-38px;
+    background:var(--brass);color:#1a1508;
+    font-family:'Oswald',sans-serif;font-size:11px;font-weight:600;letter-spacing:.14em;
+    padding:4px 42px;transform:rotate(38deg);
+    box-shadow:0 2px 6px rgba(0,0,0,.35);
+  }
+  .rec-tier{
+    font-family:'Oswald',sans-serif;font-weight:700;font-size:46px;color:#f4efe2;line-height:1;
+  }
+  .rec-tier span{color:var(--brass-bright);}
+  .rec-caption{color:var(--text-dim);font-size:13px;margin-top:4px;margin-bottom:18px;}
+  .stat-row{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;}
+  .stat{
+    background:rgba(0,0,0,.18);
+    border:1px solid var(--line-soft);
+    padding:12px 14px;
+    border-radius:2px;
+  }
+  .stat .k{font-family:'Oswald',sans-serif;font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--text-dim);}
+  .stat .v{font-family:'Space Mono',monospace;font-size:20px;color:var(--text);margin-top:4px;}
+  .stat .v small{font-size:11px;color:var(--text-dim);font-family:'Source Serif 4',serif;}
+
+  /* ---- Table ---- */
+  table{width:100%;border-collapse:collapse;font-size:13.5px;}
+  thead th{
+    text-align:right;
+    font-family:'Oswald',sans-serif;
+    font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;
+    color:var(--text-dim);
+    padding:8px 10px;border-bottom:1px solid var(--line);
+  }
+  thead th:first-child, td:first-child{text-align:left;}
+  tbody td{
+    padding:9px 10px;text-align:right;
+    font-family:'Space Mono',monospace;
+    border-bottom:1px solid var(--line-soft);
+    color:var(--text);
+  }
+  tbody tr.pick{background:rgba(201,162,39,.10);}
+  tbody tr.pick td:first-child{color:var(--brass-bright);font-weight:700;}
+  .tier-name{font-family:'Oswald',sans-serif;font-weight:600;letter-spacing:.02em;}
+  .badge{
+    display:inline-block;font-family:'Oswald',sans-serif;font-size:9.5px;letter-spacing:.06em;
+    padding:2px 6px;border-radius:2px;text-transform:uppercase;margin-left:6px;vertical-align:1px;
+  }
+  .badge.full{background:rgba(123,165,102,.18);color:var(--good);border:1px solid rgba(123,165,102,.4);}
+  .badge.partial{background:rgba(178,85,79,.18);color:var(--bad);border:1px solid rgba(178,85,79,.4);}
+  .badge.t9{background:rgba(201,162,39,.18);color:var(--brass-bright);border:1px solid rgba(201,162,39,.4);}
+
+  .chart-wrap{padding:6px 20px 20px;}
+  .foot{margin-top:26px;padding-top:16px;border-top:1px solid var(--line-soft);color:var(--text-dim);font-size:12.5px;line-height:1.7;}
+  .foot b{color:var(--text);}
+
+  /* ---- Method 2 specific: split + comparison ---- */
+  .split-row{display:flex;gap:14px;align-items:flex-end;margin-bottom:18px;flex-wrap:wrap;}
+  .split-row .field{margin-bottom:0;flex:1;min-width:200px;}
+  .warn-banner{
+    background:rgba(178,85,79,.12);border:1px solid rgba(178,85,79,.4);color:#e3b3af;
+    padding:10px 14px;border-radius:2px;font-size:12.5px;margin-bottom:16px;line-height:1.5;
+  }
+  .compare-row{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:16px;}
+  @media (max-width:600px){.compare-row{grid-template-columns:1fr;}}
+  .cmp{
+    background:rgba(0,0,0,.18);border:1px solid var(--line-soft);padding:14px 16px;border-radius:2px;
+  }
+  .cmp .k{font-family:'Oswald',sans-serif;font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--text-dim);}
+  .cmp .v{font-family:'Space Mono',monospace;font-size:22px;margin-top:4px;}
+  .cmp.delta-pos .v{color:var(--good);}
+  .cmp.delta-neg .v{color:var(--bad);}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- =====================================================================
+       PAGE HEADER
+       ===================================================================== -->
+  <div class="eyebrow">Kingdom of Power &middot; Pre-Event Planning</div>
+  <h1>Troop Training Optimizer</h1>
+  <p class="sub">This tool shows which troop tier(s) to train in the days before the event so that, once promoted to T10 with your available speedups, you earn the <b>most KoP points</b>. Training a low tier stockpiles more troops than you can afford to promote; training too high leaves speedups unused. Method 1 finds the single best tier; Method 2 tests whether splitting your pre-event days between T9 and a second tier is feasible.</p>
+
+  <!-- =====================================================================
+       GLOBAL INPUTS — shared by both Method 1 and Method 2
+       ===================================================================== -->
+  <div class="grid">
+    <div class="panel">
+      <div class="panel-head">Your Numbers</div>
+      <div class="panel-body">
+
+        <div class="field">
+          <label for="days">Time before the event</label>
+          <input type="number" id="days" value="28" min="1" step="1">
+          <div class="field-hint">Days available to pre-train troops (until Day 4 of KoP event), across 3 barracks queues.</div>
+        </div>
+
+        <div class="field">
+          <label for="preSpeed">Training speed bonus (before event)</label>
+          <div class="pct-wrap">
+            <input type="number" id="preSpeed" value="150" min="0" step="1">
+            <span>%</span>
+          </div>
+          <div class="field-hint">Your in-game "Troop Training Speed" stat total. Multiplier used in the math = 1 + this/100.</div>
+        </div>
+
+        <div class="checkline">
+          <input type="checkbox" id="noble">
+          <div>
+            <div class="ct-label">Noble Advisor active</div>
+            <div class="ct-sub">Adds +50% training speed during the event.</div>
+          </div>
+        </div>
+
+        <div class="checkline">
+          <input type="checkbox" id="kingSkill">
+          <div>
+            <div class="ct-label">Kingdom King Skill active</div>
+            <!-- Reminder: this skill should be toggled ON only while it's active during the
+                 Kingdom of Power event itself — it does not apply to pre-event training. -->
+            <div class="ct-sub">Adds +30% training speed during the event (active during KoP).</div>
+          </div>
+        </div>
+
+        <div class="field">
+          <label for="speedups">Available speedups for the event (days)</label>
+          <input type="number" id="speedups" value="100" min="0" step="1">
+          <div class="field-hint">Total speedup time you plan to spend promoting / training during KoP.</div>
+        </div>
+
+        <div class="readout">
+          <div class="ro-row"><span class="k">Event training speed</span><span class="v" id="outEventPct">—</span></div>
+          <div class="ro-row"><span class="k">= before-event</span><span class="v" id="outEventFormula">—</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- =====================================================================
+         RIGHT COLUMN — Method 1 results, then Method 2 results, stacked
+         ===================================================================== -->
+    <div class="stack">
+
+      <!-- ---------------- METHOD 1: single tier ---------------- -->
+      <div>
+        <div class="method-title">Method 1 &mdash; Single Tier</div>
+        <p class="method-desc">Train one troop tier for the whole pre-event window, then promote as many as your speedups allow.</p>
+
+        <div class="rec-card">
+          <div class="rec-tier">T<span id="recTier">–</span> <span style="font-size:16px;color:var(--text-dim);font-family:'Oswald',sans-serif;font-weight:500;">pre-trained &rarr; promoted to T10</span></div>
+          <div class="rec-caption" id="recCaption">Fill in your numbers to see the recommendation.</div>
+          <div class="stat-row">
+            <div class="stat"><div class="k">Troops trained before event</div><div class="v" id="statTroops">–</div></div>
+            <div class="stat"><div class="k">Troops promoted with your speedups</div><div class="v" id="statPromoted">–</div></div>
+            <div class="stat"><div class="k">KoP points gained</div><div class="v" id="statPoints">–</div></div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-head">Full Breakdown &mdash; All Tiers</div>
+          <div class="panel-body" style="padding-top:14px;">
+            <table>
+              <thead>
+                <tr>
+                  <th>Tier trained</th>
+                  <th>Troops trained</th>
+                  <th>Full promo needs</th>
+                  <th>Status</th>
+                  <th>KoP points</th>
+                </tr>
+              </thead>
+              <tbody id="tbody"></tbody>
+            </table>
+          </div>
+          <div class="chart-wrap">
+            <svg id="chart" viewBox="0 0 1000 220" width="100%" height="220"></svg>
+          </div>
+        </div>
+
+        <div class="foot" id="footNote"></div>
+      </div>
+
+      <!-- ---------------- METHOD 2: T9 + secondary tier split ---------------- -->
+      <div>
+        <div class="method-title">Method 2 &mdash; T9 + Secondary Tier Split</div>
+        <p class="method-desc">Train T9 first (so you get some use out of them before the event), then switch all 3 queues to whichever other tier makes best use of your remaining days and remaining speedups. T9 gets first claim on the speedup budget — the secondary tier only gets what's left over.</p>
+
+        <div class="panel">
+          <div class="panel-body">
+            <div class="split-row">
+              <div class="field">
+                <label for="t9days">Days allocated to T9 (before switching)</label>
+                <input type="number" id="t9days" value="5" min="0" step="1">
+                <div class="field-hint">Remaining days automatically go to the secondary tier.</div>
+              </div>
+            </div>
+
+            <div id="m2warn"></div>
+
+            <div class="stat-row" style="margin-bottom:6px;">
+              <div class="stat"><div class="k">T9 troops trained &amp; promoted</div><div class="v" id="m2t9troops">–</div></div>
+              <div class="stat"><div class="k">Secondary tier chosen</div><div class="v" id="m2tier">–</div></div>
+              <div class="stat"><div class="k">Secondary troops trained</div><div class="v" id="m2ytroops">–</div></div>
+            </div>
+
+            <table style="margin-top:14px;">
+              <thead>
+                <tr>
+                  <th>Slice</th>
+                  <th>Days used</th>
+                  <th>Troops trained</th>
+                  <th>Troops promoted</th>
+                  <th>KoP points</th>
+                </tr>
+              </thead>
+              <tbody id="m2tbody"></tbody>
+            </table>
+
+            <div class="compare-row">
+              <div class="cmp">
+                <div class="k">Method 2 total points (T9 + secondary)</div>
+                <div class="v" id="m2total">–</div>
+              </div>
+              <div class="cmp" id="m2deltaCard">
+                <div class="k">Vs. Method 1 best single-tier</div>
+                <div class="v" id="m2delta">–</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="foot" id="m2footNote"></div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script>
+/* =========================================================================
+   GAME DATA — KoP (Kingdom of Power) point values only.
+   Index 0..9 corresponds to Tier 1..10.
+   Edit these arrays if Kingshot changes the per-tier numbers.
+   ========================================================================= */
+const rawTrainTime  = [11.99721212,16.99851299,23.99811797,31.99872186,43.99962771,59.99714177,82.99795455,112.99837229,130.9978842,151.99669913]; // seconds/troop to TRAIN, at 1x speed
+const rawPromoTime  = [140,135,128,120,108,92,69,39,21,null]; // seconds/troop to PROMOTE to T10, at 1x speed (T10 itself = null, nothing to promote)
+const trainPointsKoP  = [3,4,5,8,12,18,25,35,45,60];   // KoP points per troop TRAINED
+const promoPointsKoP  = [57,56,55,52,48,42,35,25,15,0]; // KoP points per troop PROMOTED to T10 (indexed by the tier promoted FROM)
+
+const QUEUES = 3;        // 3 parallel barracks/training queues running at once, before AND during the event
+const SEC_DAY = 86400;   // seconds in a day
+const TIE_EPS = 0.005;   // 0.5% — when two tiers are this close in points, prefer the higher tier
+const T9_INDEX = 8;      // array index for Tier 9 (used throughout Method 2)
+const T10_INDEX = 9;     // array index for Tier 10
+
+function fmt(n){ return Math.round(n).toLocaleString('en-US'); }
+function fmt1(n){ return (Math.round(n*10)/10).toLocaleString('en-US'); }
+
+/* =========================================================================
+   SHARED INPUT READER — reads the global panel and computes speed
+   multipliers used by both Method 1 and Method 2.
+   ========================================================================= */
+function readGlobalInputs(){
+  const days = Math.max(0, parseFloat(document.getElementById('days').value) || 0);
+  const prePct = Math.max(0, parseFloat(document.getElementById('preSpeed').value) || 0);
+  const noble = document.getElementById('noble').checked;
+  const kingSkill = document.getElementById('kingSkill').checked;
+  const S = Math.max(0, parseFloat(document.getElementById('speedups').value) || 0);
+
+  // Event speed = before-event speed + optional Noble Advisor (+50%) + optional
+  // Kingdom King Skill (+30%, only active during the KoP event) + the fixed
+  // +25% training/promotion bonus that applies during the event itself.
+  const eventPct = prePct + (noble ? 50 : 0) + (kingSkill ? 30 : 0) + 25;
+  const preMult = 1 + prePct/100;
+  const eventMult = 1 + eventPct/100;
+
+  document.getElementById('outEventPct').textContent = eventPct.toFixed(0) + '%';
+  document.getElementById('outEventFormula').textContent =
+    prePct.toFixed(0) + '%' +
+    (noble ? ' + 50% (Noble)' : '') +
+    (kingSkill ? ' + 30% (King Skill)' : '') +
+    ' + 25% (event)';
+
+  return {days, preMult, eventMult, S};
+}
+
+/* =========================================================================
+   CORE TIER EVALUATION — given one troop tier, how many troops can be
+   pre-trained in `daysAvail` days, and how many KoP points does promoting
+   them (with up to `speedupBudget` days of speedups) earn? Any leftover
+   speedup budget beyond what's needed to fully promote is spent training
+   T10 troops directly (at event speed) rather than left idle.
+   Used by both Method 1 (full pre-event window) and Method 2 (partial
+   windows, once days/speedups are split between T9 and a secondary tier).
+   ========================================================================= */
+function evaluateTier(tierIdx, daysAvail, speedupBudget, preMult, eventMult){
+  const tierNum = tierIdx+1;
+  const trainTimeEventT10 = rawTrainTime[T10_INDEX] / eventMult;
+  const trainTimePre = rawTrainTime[tierIdx] / preMult;
+  const troops = Math.floor((daysAvail*SEC_DAY)/trainTimePre * QUEUES);
+
+  if(tierIdx === T10_INDEX){
+    // Tier 10: nothing to promote — all speedups just train T10 directly during the event.
+    const troopsEvent = Math.floor((speedupBudget*SEC_DAY)/trainTimeEventT10);
+    return {tierNum, troops, requirementDays:0, promoted:0, points: troopsEvent*trainPointsKoP[T10_INDEX], status:'direct', leftoverT10:troopsEvent};
+  }
+
+  const promoTimePerTroop = rawPromoTime[tierIdx] / eventMult; // seconds/troop, during the event
+  const requirementDays = (troops*promoTimePerTroop)/SEC_DAY;
+
+  let points, promoted, leftoverT10=0, status;
+  if(speedupBudget >= requirementDays){
+    const leftoverSec = (speedupBudget-requirementDays)*SEC_DAY;
+    leftoverT10 = Math.floor(leftoverSec/trainTimeEventT10);
+    promoted = troops;
+    points = troops*promoPointsKoP[tierIdx] + leftoverT10*trainPointsKoP[T10_INDEX];
+    status = 'full';
+  } else {
+    promoted = Math.min(troops, Math.floor((speedupBudget*SEC_DAY)/promoTimePerTroop));
+    points = promoted*promoPointsKoP[tierIdx];
+    status = 'partial';
+  }
+  return {tierNum, troops, requirementDays, promoted, points, status, leftoverT10};
+}
+
+/* Picks the best row from a list of evaluateTier() results, nudging toward
+   the higher tier whenever two options land within TIE_EPS of each other —
+   so you still get early use out of the troops even if a lower tier is
+   technically a hair better on paper. */
+function pickBest(rows){
+  const maxPoints = Math.max(...rows.map(r=>r.points));
+  let bestIdx = 0;
+  for(let i=0;i<rows.length;i++){
+    if(maxPoints===0 || rows[i].points >= maxPoints*(1-TIE_EPS)) bestIdx = i;
+  }
+  return bestIdx;
+}
+
+/* =========================================================================
+   METHOD 1 — single tier trained for the entire pre-event window.
+   ========================================================================= */
+function computeMethod1(){
+  const {days, preMult, eventMult, S} = readGlobalInputs();
+
+  const rows = [];
+  for(let i=0;i<10;i++) rows.push(evaluateTier(i, days, S, preMult, eventMult));
+
+  const bestIdx = pickBest(rows);
+  rows.forEach((r,i)=> r.isPick = (i===bestIdx));
+
+  renderMethod1(rows, bestIdx);
+  return rows[bestIdx]; // handed to Method 2 for the comparison card
+}
+
+function renderMethod1(rows, bestIdx){
+  const best = rows[bestIdx];
+
+  document.getElementById('recTier').textContent = best.tierNum;
+  document.getElementById('statTroops').innerHTML = fmt(best.troops);
+  document.getElementById('statPromoted').innerHTML = best.tierNum===10 ? '—' : fmt(best.promoted) +
+      (best.status==='partial' ? ' <small>of '+fmt(best.troops)+'</small>' : '');
+  document.getElementById('statPoints').textContent = fmt(best.points);
+
+  let caption;
+  if(best.tierNum===10){
+    caption = 'Your speedup budget is too small to make pre-training worthwhile — spend it training T10 troops directly.';
+  } else if(best.status==='full'){
+    caption = `Fully promotes all ${fmt(best.troops)} T${best.tierNum} troops, with ${fmt(best.leftoverT10)} leftover speedup-days spent training T10 troops directly.`;
+  } else {
+    caption = `Your speedups only cover ${fmt(best.promoted)} of the ${fmt(best.troops)} T${best.tierNum} troops you'll have trained — the rest stay unpromoted.`;
+  }
+  document.getElementById('recCaption').textContent = caption;
+
+  const tbody = document.getElementById('tbody');
+  tbody.innerHTML = rows.map(r=>{
+    const req = r.tierNum===10 ? '—' : fmt1(r.requirementDays)+'d';
+    const badge = r.tierNum===10
+      ? ''
+      : (r.status==='full' ? `<span class="badge full">full +${fmt(r.leftoverT10)} T10</span>` : `<span class="badge partial">partial</span>`);
+    return `<tr class="${r.isPick?'pick':''}">
+      <td><span class="tier-name">T${r.tierNum}</span>${badge}</td>
+      <td>${fmt(r.troops)}</td>
+      <td>${req}</td>
+      <td style="text-align:right;">${r.tierNum===10?'direct train':(r.status==='full'?'fully promoted':'speedup-limited')}</td>
+      <td>${fmt(r.points)}</td>
+    </tr>`;
+  }).join('');
+
+  drawChart(rows, bestIdx);
+
+  document.getElementById('footNote').innerHTML =
+    `<b>Assumptions:</b> 3 parallel training queues before the event · troop counts and promotions rounded down to whole troops ·
+     leftover speedups are spent training T10 troops directly at the <i>event</i> training speed ·
+     when two tiers land within ${(TIE_EPS*100).toFixed(1)}% of each other's points, the higher tier is recommended so you get more use
+     out of those troops before the event even starts. Only KoP (KvK Prep) point values are used.`;
+}
+
+function drawChart(rows, bestIdx){
+  const svg = document.getElementById('chart');
+  const W=1000,H=220,padL=44,padB=28,padT=10;
+  const max = Math.max(...rows.map(r=>r.points),1);
+  const bw = (W-padL-10)/rows.length;
+  let bars='', labels='', axis='';
+  axis += `<line x1="${padL}" y1="${H-padB}" x2="${W-10}" y2="${H-padB}" stroke="#313d4c" stroke-width="1"/>`;
+  rows.forEach((r,i)=>{
+    const h = (r.points/max)*(H-padT-padB);
+    const x = padL + i*bw + bw*0.18;
+    const y = H-padB-h;
+    const w = bw*0.64;
+    const fill = i===bestIdx ? '#c9a227' : '#2b3546';
+    const stroke = i===bestIdx ? '#e2c15a' : '#3a4759';
+    bars += `<rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${w.toFixed(1)}" height="${h.toFixed(1)}" fill="${fill}" stroke="${stroke}" stroke-width="1" rx="1"/>`;
+    labels += `<text x="${(x+w/2).toFixed(1)}" y="${H-padB+16}" fill="#8d99ab" font-family="Oswald,sans-serif" font-size="11" text-anchor="middle">T${r.tierNum}</text>`;
+  });
+  svg.innerHTML = axis + bars + labels;
+}
+
+/* =========================================================================
+   METHOD 2 — T9 trained first (days = t9days), then remaining pre-event
+   days go to whichever secondary tier (excluding T9 itself) maximizes
+   points given the speedups left over after fully claiming what T9 needs.
+   T9 always gets first call on the speedup budget, per the user's request
+   that it's the tier trained "so it can be used" early.
+   ========================================================================= */
+function computeMethod2(method1Best){
+  const {days, preMult, eventMult, S} = readGlobalInputs();
+  const t9daysRaw = parseFloat(document.getElementById('t9days').value) || 0;
+  const t9days = Math.min(Math.max(0, t9daysRaw), days);
+  const secondaryDays = days - t9days;
+
+  // --- Slice 1: Tier 9, evaluated first against the FULL speedup budget ---
+  const t9Row = evaluateTier(T9_INDEX, t9days, S, preMult, eventMult);
+  // T9 never needs leftover speedups spent on direct T10 training here —
+  // any leftover is handed to the secondary tier instead, so we recompute
+  // T9's own points without the "leftoverT10" bonus baked in.
+  const t9RequirementDays = t9Row.requirementDays;
+  let t9Promoted, t9Points, remainingS;
+  if(S >= t9RequirementDays){
+    t9Promoted = t9Row.troops;
+    t9Points = t9Row.troops * promoPointsKoP[T9_INDEX];
+    remainingS = S - t9RequirementDays;
+  } else {
+    t9Promoted = t9Row.promoted;
+    t9Points = t9Row.points;
+    remainingS = 0;
+  }
+
+  // --- Slice 2: best secondary tier (any tier except T9) using the
+  //     remaining days and remaining speedup budget ---
+  const secondaryCandidates = [0,1,2,3,4,5,6,7,T10_INDEX]; // T1-T8 and T10; T9 excluded (already used above)
+  const secondaryRows = secondaryCandidates.map(i => evaluateTier(i, secondaryDays, remainingS, preMult, eventMult));
+  const bestSecIdxInList = pickBest(secondaryRows);
+  const secRow = secondaryRows[bestSecIdxInList];
+
+  const totalPoints = t9Points + secRow.points;
+
+  renderMethod2({
+    t9days, secondaryDays, t9Row, t9Promoted, t9Points, remainingS, secRow, totalPoints, S, t9RequirementDays
+  }, method1Best);
+}
+
+function renderMethod2(m, method1Best){
+  const warnBox = document.getElementById('m2warn');
+  if(m.S < m.t9RequirementDays){
+    warnBox.innerHTML = `<div class="warn-banner">Your speedup budget can't even fully promote the T9 batch (needs ${fmt1(m.t9RequirementDays)}d, you have ${fmt1(m.S)}d) — no speedups are left for a secondary tier. Splitting isn't helping here; consider training T9 only (Method 1 already checks that case).</div>`;
+  } else if(m.secondaryDays<=0){
+    warnBox.innerHTML = `<div class="warn-banner">All pre-event days are allocated to T9 — there's no time left to train a secondary tier. Reduce "Days allocated to T9" to test a real split.</div>`;
+  } else {
+    warnBox.innerHTML = '';
+  }
+
+  document.getElementById('m2t9troops').textContent = fmt(m.t9Row.troops);
+  document.getElementById('m2tier').textContent = m.secRow.tierNum===10 ? 'T10 (direct)' : 'T'+m.secRow.tierNum;
+  document.getElementById('m2ytroops').textContent = fmt(m.secRow.troops);
+
+  document.getElementById('m2tbody').innerHTML = `
+    <tr>
+      <td><span class="tier-name">T9</span><span class="badge t9">first claim</span></td>
+      <td>${fmt1(m.t9days)}d</td>
+      <td>${fmt(m.t9Row.troops)}</td>
+      <td>${fmt(m.t9Promoted)}</td>
+      <td>${fmt(m.t9Points)}</td>
+    </tr>
+    <tr>
+      <td><span class="tier-name">T${m.secRow.tierNum}</span></td>
+      <td>${fmt1(m.secondaryDays)}d</td>
+      <td>${fmt(m.secRow.troops)}</td>
+      <td>${m.secRow.tierNum===10 ? '—' : fmt(m.secRow.promoted)}</td>
+      <td>${fmt(m.secRow.points)}</td>
+    </tr>`;
+
+  document.getElementById('m2total').textContent = fmt(m.totalPoints);
+
+  const delta = m.totalPoints - method1Best.points;
+  const deltaCard = document.getElementById('m2deltaCard');
+  const deltaEl = document.getElementById('m2delta');
+  const pct = method1Best.points>0 ? (delta/method1Best.points*100) : 0;
+  deltaEl.textContent = (delta>=0?'+':'') + fmt(delta) + `  (${(delta>=0?'+':'')}${pct.toFixed(1)}%)`;
+  deltaCard.className = 'cmp ' + (delta>=0 ? 'delta-pos' : 'delta-neg');
+
+  document.getElementById('m2footNote').innerHTML =
+    `<b>How this differs from Method 1:</b> Method 1 picks one tier and trains it for all ${document.getElementById('days').value} days (days before the event).
+     Method 2 spends the first ${fmt1(m.t9days)} days on T9 (cheapest tier to promote, so that batch is ready to use early), reserves enough
+     speedups to fully promote it if possible, then spends the remaining ${fmt1(m.secondaryDays)} days and any leftover speedups on the best
+     other tier. The comparison card shows whether this split beats Method 1's single-tier best for the <i>same total</i> speedup budget.`;
+}
+
+/* =========================================================================
+   WIRE UP — recompute both methods whenever any input changes.
+   ========================================================================= */
+function computeAll(){
+  const method1Best = computeMethod1();
+  computeMethod2(method1Best);
+}
+
+['days','preSpeed','noble','kingSkill','speedups','t9days'].forEach(id=>{
+  document.getElementById(id).addEventListener('input', computeAll);
+  document.getElementById(id).addEventListener('change', computeAll);
+});
+computeAll();
+</script>
+</body>
+</html>
