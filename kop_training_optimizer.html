@@ -522,7 +522,7 @@ function renderMethod1(rows, bestIdx){
   if(best.tierNum===10){
     caption = 'Your speedup budget is too small to make pre-training worthwhile — spend it training T10 troops directly.';
   } else if(best.status==='full'){
-    caption = `Fully promotes all ${fmt(best.troops)} T${best.tierNum} troops, with ${fmt(best.leftoverT10)} leftover speedup-days spent training T10 troops directly.`;
+    caption = `Fully promotes all ${fmt(best.troops)} T${best.tierNum} troops, with the leftover speedups used to train ${fmt(best.leftoverT10)} more T10 troops directly`;
   } else {
     caption = `Your speedups only cover ${fmt(best.promoted)} of the ${fmt(best.troops)} T${best.tierNum} troops you'll have trained — the rest stay unpromoted.`;
   }
